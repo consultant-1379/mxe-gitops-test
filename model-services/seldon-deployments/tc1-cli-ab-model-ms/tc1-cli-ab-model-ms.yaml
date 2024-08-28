@@ -1,0 +1,300 @@
+---
+apiVersion: "machinelearning.seldon.io/v1"
+kind: "SeldonDeployment"
+metadata:
+  name: "tc1-cli-ab-model-ms"
+  namespace: "mxe"
+  labels:
+    mxe/createdbyuserid: "4a252c36-469e-46c9-8741-46c3c8ed98ec"
+    mxe/createdbyusername: "mxe-user"
+    app: "seldon"
+    mxe/component: "mxe-modeldeployment"
+    mxe/deploymenttype: "static"
+    mxe/domain: ""
+    mxe/templateversion: "2.0"
+    mxe/stateful: "false"
+spec:
+  predictors:
+  - name: "main"
+    annotations:
+      predictor_version: "v1"
+    replicas: 1
+    graph:
+      name: "ab-test"
+      endpoint: {}
+      implementation: "RANDOM_ABTEST"
+      parameters:
+      - name: "ratioA"
+        value: "0.5"
+        type: "FLOAT"
+      children:
+      - name: "model-1"
+        endpoint:
+          type: "REST"
+        type: "MODEL"
+        children: []
+      - name: "model-2"
+        endpoint:
+          type: "REST"
+        type: "MODEL"
+        children: []
+    componentSpecs:
+    - spec:
+        containers:
+        - image: "armdocker.rnd.ericsson.se/proj-mxe-models/image/img_inception3:3.1.3"
+          name: "model-1"
+          livenessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+            tcpSocket:
+              port: "http"
+          readinessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+            tcpSocket:
+              port: "http"
+        terminationGracePeriodSeconds: 1
+        imagePullSecrets:
+        - name: "mxe-serving-mxe-model-service"
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 75
+              podAffinityTerm:
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchExpressions:
+                  - key: "app.kubernetes.io/part-of"
+                    operator: "In"
+                    values:
+                    - "mxe"
+                  - key: "app.kubernetes.io/component"
+                    operator: "In"
+                    values:
+                    - "model-service-instance"
+                  - key: "app.kubernetes.io/instance"
+                    operator: "In"
+                    values:
+                    - "tc1-cli-ab-model-ms"
+            - weight: 25
+              podAffinityTerm:
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchExpressions:
+                  - key: "app.kubernetes.io/part-of"
+                    operator: "In"
+                    values:
+                    - "mxe"
+                  - key: "app.kubernetes.io/component"
+                    operator: "In"
+                    values:
+                    - "model-service-instance"
+                  - key: "app.kubernetes.io/instance"
+                    operator: "NotIn"
+                    values:
+                    - "tc1-cli-ab-model-ms"
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchExpressions:
+                  - key: "app.kubernetes.io/part-of"
+                    operator: "In"
+                    values:
+                    - "mxe"
+                  - key: "app.kubernetes.io/component"
+                    operator: "In"
+                    values:
+                    - "trainer"
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchExpressions:
+                  - key: "app.kubernetes.io/part-of"
+                    operator: "In"
+                    values:
+                    - "mxe"
+                  - key: "app.kubernetes.io/component"
+                    operator: "In"
+                    values:
+                    - "packager"
+            - weight: 10
+              podAffinityTerm:
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchExpressions:
+                  - key: "app.kubernetes.io/part-of"
+                    operator: "In"
+                    values:
+                    - "mxe"
+                  - key: "app.kubernetes.io/component"
+                    operator: "In"
+                    values:
+                    - "gatekeeper"
+            - weight: 10
+              podAffinityTerm:
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchExpressions:
+                  - key: "app.kubernetes.io/part-of"
+                    operator: "In"
+                    values:
+                    - "mxe"
+                  - key: "app.kubernetes.io/component"
+                    operator: "In"
+                    values:
+                    - "ingress-controller"
+            - weight: 5
+              podAffinityTerm:
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchExpressions:
+                  - key: "app"
+                    operator: "In"
+                    values:
+                    - "nginx-ingress"
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: "mxe"
+          mxe.ericsson.com/model-service-component: "model"
+          app.kubernetes.io/instance: "tc1-cli-ab-model-ms"
+          app.kubernetes.io/component: "model-service-instance"
+    - spec:
+        containers:
+        - image: "armdocker.rnd.ericsson.se/proj-mxe-models/image/img_inception3:3.1.4"
+          name: "model-2"
+          livenessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+            tcpSocket:
+              port: "http"
+          readinessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+            tcpSocket:
+              port: "http"
+        terminationGracePeriodSeconds: 1
+        imagePullSecrets:
+        - name: "mxe-serving-mxe-model-service"
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 75
+              podAffinityTerm:
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchExpressions:
+                  - key: "app.kubernetes.io/part-of"
+                    operator: "In"
+                    values:
+                    - "mxe"
+                  - key: "app.kubernetes.io/component"
+                    operator: "In"
+                    values:
+                    - "model-service-instance"
+                  - key: "app.kubernetes.io/instance"
+                    operator: "In"
+                    values:
+                    - "tc1-cli-ab-model-ms"
+            - weight: 25
+              podAffinityTerm:
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchExpressions:
+                  - key: "app.kubernetes.io/part-of"
+                    operator: "In"
+                    values:
+                    - "mxe"
+                  - key: "app.kubernetes.io/component"
+                    operator: "In"
+                    values:
+                    - "model-service-instance"
+                  - key: "app.kubernetes.io/instance"
+                    operator: "NotIn"
+                    values:
+                    - "tc1-cli-ab-model-ms"
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchExpressions:
+                  - key: "app.kubernetes.io/part-of"
+                    operator: "In"
+                    values:
+                    - "mxe"
+                  - key: "app.kubernetes.io/component"
+                    operator: "In"
+                    values:
+                    - "trainer"
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchExpressions:
+                  - key: "app.kubernetes.io/part-of"
+                    operator: "In"
+                    values:
+                    - "mxe"
+                  - key: "app.kubernetes.io/component"
+                    operator: "In"
+                    values:
+                    - "packager"
+            - weight: 10
+              podAffinityTerm:
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchExpressions:
+                  - key: "app.kubernetes.io/part-of"
+                    operator: "In"
+                    values:
+                    - "mxe"
+                  - key: "app.kubernetes.io/component"
+                    operator: "In"
+                    values:
+                    - "gatekeeper"
+            - weight: 10
+              podAffinityTerm:
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchExpressions:
+                  - key: "app.kubernetes.io/part-of"
+                    operator: "In"
+                    values:
+                    - "mxe"
+                  - key: "app.kubernetes.io/component"
+                    operator: "In"
+                    values:
+                    - "ingress-controller"
+            - weight: 5
+              podAffinityTerm:
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchExpressions:
+                  - key: "app"
+                    operator: "In"
+                    values:
+                    - "nginx-ingress"
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: "mxe"
+          mxe.ericsson.com/model-service-component: "model"
+          app.kubernetes.io/instance: "tc1-cli-ab-model-ms"
+          app.kubernetes.io/component: "model-service-instance"
+  name: "tc1-cli-ab-model-ms"
+  annotations:
+    deployment_version: "v1"
+    seldon.io/rest-read-timeout: "0"
+    project_name: "tc1-cli-ab-model-ms"
